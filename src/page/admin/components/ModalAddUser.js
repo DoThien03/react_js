@@ -1,56 +1,60 @@
 import React, { useState } from 'react';
-import Form from 'react-bootstrap/Form';
 import Modal from 'react-bootstrap/Modal';
 import Button from 'react-bootstrap/Button';
+import Form from 'react-bootstrap/Form';
+import AddIcon from '@mui/icons-material/Add';
 import { useDispatch } from 'react-redux';
 import { createUser } from '../../../redux/slices/userSlices';
 import { toast } from 'react-toastify';
 
 function ModalAddUser(props) {
-
-
     const { showAdd, handleCloseAdd } = props;
 
-
-    // tạo và set tên các trường
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [phone, setPhone] = useState('');
     const [address, setAddress] = useState('');
     const [role, setRole] = useState('');
-
-    // quản lý trạng thái 
-    const [formValidated, setFormValidated] = useState(false);
-
-    // redux
     const dispatch = useDispatch();
+    const [isUserCodeRowVisible, setIsUserCodeRowVisible] = useState(false);
+    const [promoCode, setPromoCode] = useState('');
 
-
-    // set các trường thành trống
     const resetFields = () => {
         setName('');
         setEmail('');
         setPhone('');
         setAddress('');
         setRole('');
+        setPromoCode('');
     };
 
-
-    // đóng modal và reset các trường 
     const handleClose = () => {
         handleCloseAdd();
         resetFields();
-    }
+        setIsUserCodeRowVisible(false);
+    };
 
-    // thực hiện thêm user
+    const phoneRegex = /^(0[35789])[0-9]{8}\b/g;
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+
     const handleSubmit = (e) => {
         e.preventDefault();
 
-        // set validates
-        const form = e.currentTarget;
-        if (form.checkValidity() === false) {
-            e.stopPropagation();
-            setFormValidated(true);
+        // Check validate
+        if (!name || !email || !phone || !address || !role) {
+            toast.error("Vui lòng điền đầy đủ thông tin.");
+            return;
+        }
+
+        // Kiểm tra số điện thoại
+        if (!phoneRegex.test(phone)) {
+            toast.error("Vui lòng nhập số điện thoại hợp lệ.");
+            return;
+        }
+
+        // Kiểm tra địa chỉ email
+        if (!emailRegex.test(email)) {
+            toast.error("Vui lòng nhập địa chỉ email hợp lệ.");
             return;
         }
 
@@ -59,15 +63,18 @@ function ModalAddUser(props) {
             userEmail: email,
             userPhone: phone,
             userAddress: address,
-            userRole: role
+            userRole: role,
+            promoCode: isUserCodeRowVisible ? promoCode : null,
         };
-        if (itemData) {
-            dispatch(createUser(itemData));
-            toast.success("Thêm người dùng mới thành công!");
-            handleCloseAdd();
-            resetFields();
-        }
 
+        dispatch(createUser(itemData));
+        toast.success("Thêm người dùng mới thành công!");
+        handleCloseAdd();
+        resetFields();
+    };
+
+    const handleAddUserCode = () => {
+        setIsUserCodeRowVisible(!isUserCodeRowVisible);
     };
 
     return (
@@ -76,8 +83,8 @@ function ModalAddUser(props) {
                 <Modal.Title>Thêm Người Dùng Mới</Modal.Title>
             </Modal.Header>
             <Modal.Body>
-                <Form noValidate validated={formValidated} onSubmit={handleSubmit}>
-                    <Form.Group controlId="name">
+                <Form>
+                    <Form.Group controlId="formName">
                         <Form.Label>Họ tên:</Form.Label>
                         <Form.Control
                             type="text"
@@ -85,12 +92,8 @@ function ModalAddUser(props) {
                             onChange={(e) => setName(e.target.value)}
                             required
                         />
-                        <Form.Control.Feedback type="invalid">
-                            Vui lòng nhập họ tên.
-                        </Form.Control.Feedback>
                     </Form.Group>
-
-                    <Form.Group controlId="email">
+                    <Form.Group controlId="formEmail">
                         <Form.Label>Email:</Form.Label>
                         <Form.Control
                             type="email"
@@ -98,12 +101,8 @@ function ModalAddUser(props) {
                             onChange={(e) => setEmail(e.target.value)}
                             required
                         />
-                        <Form.Control.Feedback type="invalid">
-                            Vui lòng nhập địa chỉ email hợp lệ.
-                        </Form.Control.Feedback>
                     </Form.Group>
-
-                    <Form.Group controlId="phone">
+                    <Form.Group controlId="formPhone">
                         <Form.Label>Số điện thoại:</Form.Label>
                         <Form.Control
                             type="text"
@@ -111,12 +110,8 @@ function ModalAddUser(props) {
                             onChange={(e) => setPhone(e.target.value)}
                             required
                         />
-                        <Form.Control.Feedback type="invalid">
-                            Vui lòng nhập số điện thoại.
-                        </Form.Control.Feedback>
                     </Form.Group>
-
-                    <Form.Group controlId="address">
+                    <Form.Group controlId="formAddress">
                         <Form.Label>Địa chỉ:</Form.Label>
                         <Form.Control
                             type="text"
@@ -124,42 +119,45 @@ function ModalAddUser(props) {
                             onChange={(e) => setAddress(e.target.value)}
                             required
                         />
-                        <Form.Control.Feedback type="invalid">
-                            Vui lòng nhập địa chỉ.
-                        </Form.Control.Feedback>
                     </Form.Group>
-
-                    <Form.Group controlId="role">
+                    <Form.Group controlId="formRole">
                         <Form.Label>Phân quyền:</Form.Label>
                         {['Admin', 'User'].map((userRole, index) => (
                             <Form.Check
                                 key={index}
-                                inline
-                                label={userRole}
                                 type="radio"
+                                label={userRole}
                                 name="role"
-                                id={`role-${index}`}
                                 value={userRole}
                                 checked={role === userRole}
                                 onChange={(e) => setRole(e.target.value)}
                                 required
                             />
                         ))}
-                        <Form.Control.Feedback type="invalid">
-                            Vui lòng chọn phân quyền.
-                        </Form.Control.Feedback>
                     </Form.Group>
-
-                    <Modal.Footer>
-                        <Button variant="secondary" onClick={handleClose}>
-                            Đóng
-                        </Button>
-                        <Button variant="primary" type="submit">
-                            Thêm
-                        </Button>
-                    </Modal.Footer>
+                    {isUserCodeRowVisible && (
+                        <Form.Group controlId="formPromoCode">
+                            <Form.Label>Mã Khuyến Mại:</Form.Label>
+                            <Form.Control
+                                type="text"
+                                value={promoCode}
+                                onChange={(e) => setPromoCode(e.target.value)}
+                            />
+                        </Form.Group>
+                    )}
+                    <Button variant="primary" className="my-4" size="sm" onClick={handleAddUserCode}>
+                        <AddIcon />
+                    </Button>
                 </Form>
             </Modal.Body>
+            <Modal.Footer>
+                <Button variant="secondary" onClick={handleClose}>
+                    Đóng
+                </Button>
+                <Button variant="primary" type="submit" onClick={handleSubmit}>
+                    Thêm
+                </Button>
+            </Modal.Footer>
         </Modal>
     );
 }

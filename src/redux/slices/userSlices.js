@@ -33,6 +33,11 @@ export const createUser = createAsyncThunk('users/createUser', async (userData) 
     return response.data;
 });
 
+export const addUserCode = createAsyncThunk('userCode/addCode', async ({ userId, userCode }) => {
+    const response = await axios.post(`${API_BASE_URL}/user/addCode/${userId}`, userCode);
+    return response.data;
+});
+
 export const updateUser = createAsyncThunk('users/updateUser', async (userData) => {
     const response = await axios.put(`${API_BASE_URL}/user/update`, userData);
     return response.data;
@@ -58,7 +63,6 @@ const usersSlice = createSlice({
                 state.status = 'loading';
             })
             .addCase(fetchUsers.fulfilled, (state, action) => {
-                console.log('Action Payload:', action.payload);
                 state.status = 'succeeded';
                 state.list = action.payload.content;
                 state.totalPages = action.payload.totalPages;
@@ -82,6 +86,9 @@ const usersSlice = createSlice({
             .addCase(deleteUser.fulfilled, (state, action) => {
                 const id = action.payload;
                 state.list = state.list.filter((user) => user.userId !== id);
+            })
+            .addCase(addUserCode.fulfilled, (state, action) => {
+                state.list = action.payload;
             })
     },
 });

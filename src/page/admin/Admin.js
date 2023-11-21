@@ -5,6 +5,9 @@ import { Container, Modal } from 'react-bootstrap';
 import Button from 'react-bootstrap/Button';
 import { useDispatch, useSelector } from 'react-redux';
 import Stack from 'react-bootstrap/Stack';
+import AddIcon from '@mui/icons-material/Add';
+import ModeIcon from '@mui/icons-material/Mode';
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import { ToastContainer, toast } from 'react-toastify';
 import ModalEditUser from './components/ModalEditUser';
 import ModalAddUser from './components/ModalAddUser';
@@ -17,6 +20,7 @@ import {
     selectCurrentPage,
     selectTotalPages,
 } from '../../redux/slices/userSlices';
+import ModalAdd from './components/ModalAdd';
 
 const Admin = () => {
 
@@ -24,6 +28,11 @@ const Admin = () => {
     // toggle modal add
     const [showAdd, setShowAdd] = useState(false);
     const handleCloseAdd = () => setShowAdd(false);
+
+
+    // toggle modal add Code
+    const [showAddCode, setShowAddCode] = useState(false);
+    const handleCloseAddCode = () => setShowAddCode(false);
 
 
     // toggle modal edit
@@ -124,6 +133,7 @@ const Admin = () => {
                             <th scope="col">PHONE</th>
                             <th scope="col">ADDRESS</th>
                             <th scope="col">ROLE</th>
+                            <th scope="col">Code</th>
                             <th scope="col">ACTION</th>
                         </tr>
                     </thead>
@@ -136,20 +146,33 @@ const Admin = () => {
                                 <td>{user.userPhone}</td>
                                 <td>{user.userAddress}</td>
                                 <td>{user.userRole}</td>
+
+                                <td>
+                                    {user.userCodes.map((userCode) => (
+                                        <td key={userCode.codeId}>
+                                            {userCode.code}
+                                        </td>
+                                    ))}
+                                </td>
+
+
                                 <td>
                                     <Button
-                                        className="mx-2"
+                                        size="sm"
                                         variant="warning"
                                         onClick={() => handleShowEdit(user)}
                                     >
-                                        Edit
+                                        <ModeIcon />
                                     </Button>
                                     <Button
+                                        size="sm"
+                                        className="mx-2"
                                         variant="danger"
                                         onClick={() => handleShowDeleteConfirmation(user.userId)}
                                     >
-                                        Delete
+                                        <DeleteOutlineIcon />
                                     </Button>
+                                    <Button variant="primary" size="sm" onClick={() => setShowAddCode(user)}>< AddIcon /></Button>
                                 </td>
                             </tr>
                         ))
@@ -219,6 +242,11 @@ const Admin = () => {
 
                 {/* === Modal add user === */}
                 <ModalAddUser showAdd={showAdd} handleCloseAdd={handleCloseAdd} />
+
+
+                {/* === Modal add Code === */}
+                <ModalAdd showAddCode={showAddCode} handleCloseAddCode={handleCloseAddCode} />
+
 
                 {/* === Modal edit user === */}
                 <ModalEditUser showEdit={showEdit} handleCloseEdit={handleCloseEdit} showModalEdit={showModalEdit} />

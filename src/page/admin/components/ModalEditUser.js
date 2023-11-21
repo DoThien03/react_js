@@ -19,7 +19,7 @@ function ModalEditUser(props) {
     const [role, setRole] = useState('');
 
 
-    // tạo các biết và lưu trạng thái kiểm tra
+    // tạo các biến và lưu trạng thái kiểm tra
     const [nameError, setNameError] = useState('');
     const [emailError, setEmailError] = useState('');
     const [phoneError, setPhoneError] = useState('');
@@ -27,7 +27,10 @@ function ModalEditUser(props) {
 
 
     // Kiểm tra tính hợp lệ
+    const regexEmail = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    const regexPhone = /^(0[35789])[0-9]{8}\b/g;
     const validateForm = () => {
+
         let isValid = true;
 
         if (name.trim() === '') {
@@ -39,11 +42,18 @@ function ModalEditUser(props) {
         if (email.trim() === '') {
             setEmailError('Vui lòng nhập email');
             isValid = false;
+        } else if (!regexEmail.test(email)) {
+            setEmailError('Email không đúng định dạng')
+            isValid = false;
         } else {
             setEmailError('');
         }
         if (phone.trim() === '') {
-            setPhoneError('Vui lòng nhập tên');
+            setPhoneError('Vui lòng nhập SDT');
+            isValid = false;
+        }
+        else if (!regexPhone.test(phone)) {
+            setPhoneError('SĐT không đúng định dạng')
             isValid = false;
         } else {
             setPhoneError('');
