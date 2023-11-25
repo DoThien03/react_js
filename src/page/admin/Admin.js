@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Pagination from 'react-bootstrap/Pagination';
 import Table from 'react-bootstrap/Table';
-import { Container, Modal } from 'react-bootstrap';
+import { Container, Modal, Spinner } from 'react-bootstrap';
 import Button from 'react-bootstrap/Button';
 import { useDispatch, useSelector } from 'react-redux';
 import Stack from 'react-bootstrap/Stack';
@@ -133,50 +133,44 @@ const Admin = () => {
                             <th scope="col">PHONE</th>
                             <th scope="col">ADDRESS</th>
                             <th scope="col">ROLE</th>
-                            <th scope="col">Code</th>
                             <th scope="col">ACTION</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {users.map((user) => (
-                            < tr key={user.userId} >
-                                <td>{user.userId}</td>
-                                <td>{user.userName}</td>
-                                <td>{user.userEmail}</td>
-                                <td>{user.userPhone}</td>
-                                <td>{user.userAddress}</td>
-                                <td>{user.userRole}</td>
-
-                                <td>
-                                    {user.userCodes.map((userCode) => (
-                                        <td key={userCode.codeId}>
-                                            {userCode.code}
-                                        </td>
-                                    ))}
-                                </td>
-
-
-                                <td>
-                                    <Button
-                                        size="sm"
-                                        variant="warning"
-                                        onClick={() => handleShowEdit(user)}
-                                    >
-                                        <ModeIcon />
-                                    </Button>
-                                    <Button
-                                        size="sm"
-                                        className="mx-2"
-                                        variant="danger"
-                                        onClick={() => handleShowDeleteConfirmation(user.userId)}
-                                    >
-                                        <DeleteOutlineIcon />
-                                    </Button>
-                                    <Button variant="primary" size="sm" onClick={() => setShowAddCode(user)}>< AddIcon /></Button>
-                                </td>
-                            </tr>
-                        ))
-                        }
+                        {Array.isArray(users) && users.length > 0 ? (
+                            users.map((user) => (
+                                <tr key={user.userId}>
+                                    <td>{user.userId}</td>
+                                    <td>{user.userName}</td>
+                                    <td>{user.userEmail}</td>
+                                    <td>{user.userPhone}</td>
+                                    <td>{user.userAddress}</td>
+                                    <td>{user.userRole}</td>
+                                    <td>
+                                        <Button
+                                            size="sm"
+                                            variant="warning"
+                                            onClick={() => handleShowEdit(user)}
+                                        >
+                                            <ModeIcon />
+                                        </Button>
+                                        <Button
+                                            size="sm"
+                                            className="mx-2"
+                                            variant="danger"
+                                            onClick={() => handleShowDeleteConfirmation(user.userId)}
+                                        >
+                                            <DeleteOutlineIcon />
+                                        </Button>
+                                        <Button variant="primary" size="sm" onClick={() => setShowAddCode(user)}>< AddIcon /></Button>
+                                    </td>
+                                </tr>
+                            ))
+                        ) : (
+                            <Spinner animation="border" role="status">
+                                <span className="visually-hidden">Loading...</span>
+                            </Spinner>
+                        )}
                     </tbody>
                 </Table>
 

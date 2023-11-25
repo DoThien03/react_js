@@ -1,3 +1,4 @@
+
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axios from 'axios';
 const API_BASE_URL = 'http://localhost:9000/api';
@@ -33,10 +34,26 @@ export const createUser = createAsyncThunk('users/createUser', async (userData) 
     return response.data;
 });
 
-export const addUserCode = createAsyncThunk('userCode/addCode', async ({ userId, userCode }) => {
-    const response = await axios.post(`${API_BASE_URL}/user/addCode/${userId}`, userCode);
-    return response.data;
+
+export const addUserCode = createAsyncThunk('userCode/addCode', async ({ userId, code }) => {
+    try {
+        const response = await axios.post(`${API_BASE_URL}/user/addCode/${userId}`, { code: code });
+        return response.data;
+    } catch (error) {
+        throw error.response.data;
+    }
 });
+
+export const checkDuplicateCode = createAsyncThunk('userCode/checkDuplicate', async ({ userId, code }) => {
+    try {
+        const response = await axios.get(`${API_BASE_URL}/user/checkDuplicateCode/${userId}/${code}`);
+        return response.data;
+    } catch (error) {
+        console.error('Check lỗi trùng:', error);
+        return false;
+    }
+});
+
 
 export const updateUser = createAsyncThunk('users/updateUser', async (userData) => {
     const response = await axios.put(`${API_BASE_URL}/user/update`, userData);
@@ -88,7 +105,7 @@ const usersSlice = createSlice({
                 state.list = state.list.filter((user) => user.userId !== id);
             })
             .addCase(addUserCode.fulfilled, (state, action) => {
-                state.list = action.payload;
+                state.listUser = action.payload;
             })
     },
 });

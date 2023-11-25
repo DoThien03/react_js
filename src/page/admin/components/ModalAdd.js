@@ -1,51 +1,93 @@
-import React, { useState } from 'react';
-import Modal from 'react-bootstrap/Modal';
-import Button from 'react-bootstrap/Button';
-import Form from 'react-bootstrap/Form';
-import AddIcon from '@mui/icons-material/Add';
-import { addUserCode } from '../../../redux/slices/userSlices';
+import React, { useEffect, useState, useCallback } from 'react';
+import { Modal, Button, Form } from 'react-bootstrap';
 import { useDispatch } from 'react-redux';
+import { addUserCode, fetchUsers } from '../../../redux/slices/userSlices';
+import { uniqueId } from 'lodash';
 
-function ModalAdd(props) {
+const CustomInput = ({ delay = 3000, index, onChange, value }) => {
+    const [internalValue, setInternalValue] = useState(value);
+
+    const changeHandler = (e) => setInternalValue({ ...internalValue, value: e.target.value });
+
+    useEffect(() => onChange(index, internalValue), [index, internalValue, onChange]);
+
+    useEffect(() => {
+        let timerId = null;
+
+        if (internalValue.value) {
+            console.log("Start", internalValue.value);
+            setInternalValue((value) => ({ ...value, validating: true }));
+
+            timerId = setTimeout(async () => {
+                const isValid = Math.random() < 0.5;
+                console.log("Complete", internalValue.value);
+                setInternalValue((value) => ({ ...value, isValid: true ^ isValid, validating: false }));
+            }, delay);
+        }
+
+        return () => {
+            console.log("Cancel", internalValue.value);
+            clearTimeout(timerId);
+            setInternalValue((value) => ({ ...value, validating: true }));
+        };
+    }, [delay, internalValue.value]);
+
+    return (
+        <div>
+            <Form.Control type="text" value={internalValue.value} onChange={changeHandler} />
+            {internalValue.validating && <p style={{ color: 'red' }}>Vui lòng nhập mã!</p>}
+            {internalValue.isValid === false && <p style={{ color: 'red' }}>Kiểm tra không thành công</p>}
+        </div>
+    );
+};
+
+function ModalAdd({ showAddCode, handleCloseAddCode }) {
     const dispatch = useDispatch();
-    const { showAddCode, handleCloseAddCode } = props;
-    const [userCode, setUserCode] = useState('');
-    const [isUserCodeRowVisible, setIsUserCodeRowVisible] = useState(false);
-    const [promoCode, setPromoCode] = useState('');
+    const [userCodeRows, setUserCodeRows] = useState([]);
 
-    const resetFields = () => {
-        setUserCode('');
-        setPromoCode('');
-    };
+    const resetFields = () => setUserCodeRows([]);
 
     const handleCloseCode = () => {
         handleCloseAddCode();
         resetFields();
-        setIsUserCodeRowVisible(false);
     };
 
+    const updateData = useCallback((index, datum) => setUserCodeRows((data) => data.map((el, i) => (i === index ? datum : el))), []);
 
-    const handleSubmit = () => {
-        const userCodeData = {
-            userId: showAddCode.userId,
-            code: userCode
-        };
-
-        console.log('userCodeData', userCodeData);
-
-
-        dispatch(addUserCode(userCodeData));
-        handleCloseAddCode();
-        resetFields();
-
-    };
-
+    const newCode = { id: uniqueId(), value: '', isSent: false };
 
     const handleAddUserCode = () => {
-        setIsUserCodeRowVisible(!isUserCodeRowVisible);
+        setUserCodeRows((rows) => [...rows, newCode]);
+
     };
 
+    const handleSubmit = async () => {
+        const codesToSubmit = userCodeRows.filter((row) => !row.isSent && row.value.trim() !== '');
+        const isEmpty = userCodeRows.some((row) => !row.value.trim());
 
+        if (codesToSubmit.length === 0) {
+            console.log('Không có mã mới hoặc đã sửa để gửi');
+            return;
+        }
+
+        if (isEmpty) {
+            console.log('Lỗi empty');
+            return;
+        }
+
+        await Promise.all(
+            codesToSubmit.map(async (row) => {
+                await dispatch(addUserCode({ userId: showAddCode.userId, code: row.value }));
+                row.isSent = true;
+            })
+        );
+
+        //dispatch(fetchUsers());
+    };
+
+    const handleRemoveUserCode = (id) => {
+        setUserCodeRows((rows) => rows.filter((row) => row.id !== id));
+    };
 
     return (
         <Modal show={showAddCode} onHide={handleCloseCode}>
@@ -54,27 +96,21 @@ function ModalAdd(props) {
             </Modal.Header>
             <Modal.Body>
                 <Form>
-                    <Form.Group controlId="nameCode">
-                        <Form.Label>Mã:</Form.Label>
-                        <Form.Control
-                            type="text"
-                            id="nameCode"
-                            value={userCode}
-                            onChange={(e) => setUserCode(e.target.value)}
-                        />
-                    </Form.Group>
-                    {/* {isUserCodeRowVisible && (
-                        <Form.Group controlId="formPromoCode">
+                    {userCodeRows.map((row, index) => (
+                        <Form.Group key={row.id} controlId={`userCode_${row.id}`}>
                             <Form.Label>Mã:</Form.Label>
-                            <Form.Control
-                                type="text"
-                                value={promoCode}
-                                onChange={(e) => setPromoCode(e.target.value)}
+                            <CustomInput
+                                index={index}
+                                onChange={updateData}
+                                value={row}
                             />
+                            <Button variant="danger" className="my-3" onClick={() => handleRemoveUserCode(row.id)}>
+                                Xoá
+                            </Button>
                         </Form.Group>
-                    )} */}
+                    ))}
                     <Button variant="primary" className="my-4" size="sm" onClick={handleAddUserCode}>
-                        < AddIcon />
+                        Thêm Mã
                     </Button>
                 </Form>
             </Modal.Body>
