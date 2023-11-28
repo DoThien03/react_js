@@ -135,19 +135,6 @@ function ModalAddUser(props) {
                             />
                         ))}
                     </Form.Group>
-                    {isUserCodeRowVisible && (
-                        <Form.Group controlId="formPromoCode">
-                            <Form.Label>Mã Khuyến Mại:</Form.Label>
-                            <Form.Control
-                                type="text"
-                                value={promoCode}
-                                onChange={(e) => setPromoCode(e.target.value)}
-                            />
-                        </Form.Group>
-                    )}
-                    <Button variant="primary" className="my-4" size="sm" onClick={handleAddUserCode}>
-                        <AddIcon />
-                    </Button>
                 </Form>
             </Modal.Body>
             <Modal.Footer>

@@ -1,35 +1,44 @@
-// CustomInput.js
-import React, { useEffect } from 'react';
-import { Field } from 'redux-form';
+import { useState } from "react";
+import { useEffect } from "react";
+import { Alert, Form } from "react-bootstrap";
+import { checkDuplicateCode } from "../../../redux/slices/userSlices";
 
-const CustomInput = ({ delay = 3000, input, meta }) => {
-    useEffect(() => {
-        let timerId = null;
+const CustomInput = ({ index, onChange, value, checkDuplicate }) => {
+    const [internalValue, setInternalValue] = useState(value);
+    const [error, setError] = useState(null);
 
-        if (input.value) {
-            console.log("Bắt đầu", input.value);
-            meta.dispatch({ type: 'VALIDATING', meta: { ...meta } });
+    const changeHandler = async (e) => {
+        const newValue = e.target.value;
+        setInternalValue((value) => ({ ...value, value: newValue, isValid: true, validating: true }));
+        setError(null);
 
-            timerId = setTimeout(async () => {
-                const isValid = Math.random() < 0.5;
-                console.log("Hoàn thành", input.value);
-                meta.dispatch({ type: 'SET_VALID', payload: isValid });
-            }, delay);
+        if (newValue.trim() !== '') {
+            try {
+                const isDuplicate = await checkDuplicate(newValue);
+                if (isDuplicate) {
+                    setError('Mã đã tồn tại!');
+                    setInternalValue((value) => ({ ...value, isValid: false, validating: false }));
+                } else {
+                    setInternalValue((value) => ({ ...value, isValid: true, validating: false }));
+                }
+            } catch (error) {
+                console.error('Lỗi trùng:', error);
+            }
+        } else {
+            setInternalValue((value) => ({ ...value, isValid: false, validating: false }));
         }
+    };
 
-        return () => {
-            console.log("Hủy", input.value);
-            clearTimeout(timerId);
-            meta.dispatch({ type: 'VALIDATING', meta: { ...meta } });
-        };
-    }, [delay, input.value, meta]);
+    useEffect(() => onChange(index, internalValue), [index, internalValue, onChange]);
 
     return (
         <div>
-            <input {...input} type="text" />
-            {meta.submitFailed && meta.error && <p style={{ color: 'red' }}>{meta.error}</p>}
-            {meta.validating && <p style={{ color: 'orange' }}>Đang kiểm tra...</p>}
-            {meta.isValid === false && <p style={{ color: 'red' }}>Kiểm tra không thành công</p>}
+            <Form.Control type="text" value={internalValue.value} onChange={changeHandler} />
+            {internalValue.validating && <p style={{ color: 'gray' }}>Đang kiểm tra mã...</p>}
+            {error && !internalValue.validating && <p style={{ color: 'red' }}>{error}</p>}
+            {internalValue.isValid === false && !internalValue.validating && !error && (
+                <p style={{ color: 'red' }}>Vui lòng nhập mã!</p>
+            )}
         </div>
     );
 };

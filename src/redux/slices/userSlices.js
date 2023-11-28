@@ -43,7 +43,6 @@ export const addUserCode = createAsyncThunk('userCode/addCode', async ({ userId,
         throw error.response.data;
     }
 });
-
 export const checkDuplicateCode = createAsyncThunk('userCode/checkDuplicate', async ({ userId, code }) => {
     try {
         const response = await axios.get(`${API_BASE_URL}/user/checkDuplicateCode/${userId}/${code}`);
@@ -104,9 +103,11 @@ const usersSlice = createSlice({
                 const id = action.payload;
                 state.list = state.list.filter((user) => user.userId !== id);
             })
-            .addCase(addUserCode.fulfilled, (state, action) => {
-                state.listUser = action.payload;
-            })
+
+            .addCase(checkDuplicateCode.fulfilled, (state, action) => {
+                state.isDuplicate = action.payload;
+            });
+
     },
 });
 

@@ -1,45 +1,10 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { Modal, Button, Form } from 'react-bootstrap';
 import { useDispatch } from 'react-redux';
-import { addUserCode, fetchUsers } from '../../../redux/slices/userSlices';
+import { addUserCode, checkDuplicateCode } from '../../../redux/slices/userSlices';
 import { uniqueId } from 'lodash';
-
-const CustomInput = ({ delay = 3000, index, onChange, value }) => {
-    const [internalValue, setInternalValue] = useState(value);
-
-    const changeHandler = (e) => setInternalValue({ ...internalValue, value: e.target.value });
-
-    useEffect(() => onChange(index, internalValue), [index, internalValue, onChange]);
-
-    useEffect(() => {
-        let timerId = null;
-
-        if (internalValue.value) {
-            console.log("Start", internalValue.value);
-            setInternalValue((value) => ({ ...value, validating: true }));
-
-            timerId = setTimeout(async () => {
-                const isValid = Math.random() < 0.5;
-                console.log("Complete", internalValue.value);
-                setInternalValue((value) => ({ ...value, isValid: true ^ isValid, validating: false }));
-            }, delay);
-        }
-
-        return () => {
-            console.log("Cancel", internalValue.value);
-            clearTimeout(timerId);
-            setInternalValue((value) => ({ ...value, validating: true }));
-        };
-    }, [delay, internalValue.value]);
-
-    return (
-        <div>
-            <Form.Control type="text" value={internalValue.value} onChange={changeHandler} />
-            {internalValue.validating && <p style={{ color: 'red' }}>Vui lòng nhập mã!</p>}
-            {internalValue.isValid === false && <p style={{ color: 'red' }}>Kiểm tra không thành công</p>}
-        </div>
-    );
-};
+import CustomInput from './CustomInput';
+import { toast } from 'react-toastify';
 
 function ModalAdd({ showAddCode, handleCloseAddCode }) {
     const dispatch = useDispatch();
@@ -54,11 +19,12 @@ function ModalAdd({ showAddCode, handleCloseAddCode }) {
 
     const updateData = useCallback((index, datum) => setUserCodeRows((data) => data.map((el, i) => (i === index ? datum : el))), []);
 
-    const newCode = { id: uniqueId(), value: '', isSent: false };
+    const newCode = { id: uniqueId(), value: '', isValid: false, validating: false, isSent: false };
 
     const handleAddUserCode = () => {
-        setUserCodeRows((rows) => [...rows, newCode]);
 
+
+        setUserCodeRows((rows) => [...rows, newCode]);
     };
 
     const handleSubmit = async () => {
@@ -66,28 +32,48 @@ function ModalAdd({ showAddCode, handleCloseAddCode }) {
         const isEmpty = userCodeRows.some((row) => !row.value.trim());
 
         if (codesToSubmit.length === 0) {
-            console.log('Không có mã mới hoặc đã sửa để gửi');
+            console.log('Không có mã mới để gửi');
             return;
         }
 
         if (isEmpty) {
-            console.log('Lỗi empty');
+            console.log('Mã không được để trống!');
             return;
         }
 
+        // Kiểm tra nếu có mã trùng và hiển thị thông báo
+        if (userCodeRows.some((row) => row.isValid === false || row.isDuplicate)) {
+            console.log('Có mã trùng lặp!')
+            return;
+        }
+
+        // Gửi dữ liệu lên cơ sở dữ liệu chỉ khi không có mã trùng lặp
         await Promise.all(
-            codesToSubmit.map(async (row) => {
+            codesToSubmit.map(async (row, index) => {
                 await dispatch(addUserCode({ userId: showAddCode.userId, code: row.value }));
-                row.isSent = true;
+
             })
         );
-
-        //dispatch(fetchUsers());
+        handleCloseCode()
     };
 
     const handleRemoveUserCode = (id) => {
         setUserCodeRows((rows) => rows.filter((row) => row.id !== id));
     };
+
+
+    const checkDuplicate = async (code) => {
+        try {
+            const response = await dispatch(checkDuplicateCode({ userId: showAddCode.userId, code: code }));
+            return response.payload;
+
+        } catch (error) {
+            console.log('Lỗi trùng', error);
+            return false;
+        }
+    };
+
+
 
     return (
         <Modal show={showAddCode} onHide={handleCloseCode}>
@@ -103,6 +89,7 @@ function ModalAdd({ showAddCode, handleCloseAddCode }) {
                                 index={index}
                                 onChange={updateData}
                                 value={row}
+                                checkDuplicate={checkDuplicate}
                             />
                             <Button variant="danger" className="my-3" onClick={() => handleRemoveUserCode(row.id)}>
                                 Xoá
