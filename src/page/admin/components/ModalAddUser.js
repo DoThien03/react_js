@@ -19,6 +19,7 @@ function ModalAddUser(props) {
     const [isUserCodeRowVisible, setIsUserCodeRowVisible] = useState(false);
     const [promoCode, setPromoCode] = useState('');
 
+
     const resetFields = () => {
         setName('');
         setEmail('');

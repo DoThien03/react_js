@@ -4,26 +4,23 @@ import { useDispatch } from 'react-redux';
 import { addUserCode, checkDuplicateCode } from '../../../redux/slices/userSlices';
 import { uniqueId } from 'lodash';
 import CustomInput from './CustomInput';
-import { toast } from 'react-toastify';
-
 function ModalAdd({ showAddCode, handleCloseAddCode }) {
     const dispatch = useDispatch();
     const [userCodeRows, setUserCodeRows] = useState([]);
-
     const resetFields = () => setUserCodeRows([]);
+
 
     const handleCloseCode = () => {
         handleCloseAddCode();
         resetFields();
     };
 
-    const updateData = useCallback((index, datum) => setUserCodeRows((data) => data.map((el, i) => (i === index ? datum : el))), []);
 
+    const updateData = useCallback((index, datum) => setUserCodeRows((data) => data.map((el, i) => (i === index ? datum : el))), []);
     const newCode = { id: uniqueId(), value: '', isValid: false, validating: false, isSent: false };
 
+
     const handleAddUserCode = () => {
-
-
         setUserCodeRows((rows) => [...rows, newCode]);
     };
 
@@ -57,6 +54,7 @@ function ModalAdd({ showAddCode, handleCloseAddCode }) {
         handleCloseCode()
     };
 
+
     const handleRemoveUserCode = (id) => {
         setUserCodeRows((rows) => rows.filter((row) => row.id !== id));
     };
@@ -72,7 +70,6 @@ function ModalAdd({ showAddCode, handleCloseAddCode }) {
             return false;
         }
     };
-
 
 
     return (

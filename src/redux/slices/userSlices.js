@@ -43,16 +43,41 @@ export const addUserCode = createAsyncThunk('userCode/addCode', async ({ userId,
         throw error.response.data;
     }
 });
-export const checkDuplicateCode = createAsyncThunk('userCode/checkDuplicate', async ({ userId, code }) => {
-    try {
-        const response = await axios.get(`${API_BASE_URL}/user/checkDuplicateCode/${userId}/${code}`);
-        return response.data;
-    } catch (error) {
-        console.error('Check lỗi trùng:', error);
-        return false;
-    }
-});
 
+let cancelToken;
+
+export const checkDuplicateCode = createAsyncThunk(
+    'userCode/checkDuplicate',
+    async ({ userId, code }, { signal }) => {
+        // Hủy yêu cầu trước đó nếu có
+        if (cancelToken) {
+            cancelToken.cancel('Canceled due to new request');
+        }
+
+        // Tạo một Cancel Token mới
+        cancelToken = axios.CancelToken.source();
+
+        // Gán signal của Cancel Token vào biến để sử dụng trong việc hủy bỏ sau này
+        signal.addEventListener('abort', () => cancelToken.cancel());
+
+        try {
+            const response = await axios.get(`${API_BASE_URL}/user/checkDuplicateCode/${userId}/${code}`, {
+                cancelToken: cancelToken.token,
+            });
+            return response.data;
+        } catch (error) {
+            if (axios.isCancel(error)) {
+                // Xử lý khi yêu cầu bị hủy
+                console.log('Request canceled:', error.message);
+            } else {
+                // Xử lý lỗi khác
+                console.error('Check lỗi trùng:', error);
+            }
+            // Nếu có lỗi, trả về false hoặc giá trị phù hợp với trường hợp của bạn
+            return false;
+        }
+    }
+);
 
 export const updateUser = createAsyncThunk('users/updateUser', async (userData) => {
     const response = await axios.put(`${API_BASE_URL}/user/update`, userData);
@@ -103,7 +128,6 @@ const usersSlice = createSlice({
                 const id = action.payload;
                 state.list = state.list.filter((user) => user.userId !== id);
             })
-
             .addCase(checkDuplicateCode.fulfilled, (state, action) => {
                 state.isDuplicate = action.payload;
             });
