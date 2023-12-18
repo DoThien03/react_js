@@ -10,7 +10,6 @@ export const fetchUsers = createAsyncThunk('users/fetchUsers', async ({ searchDa
             // Nếu có searchData, thực hiện tìm kiếm
             console.log('Search Data:', searchData);
             const response = await axios.post(`${API_BASE_URL}/user/query`, { ...searchData }, { params: { page, size } });
-            console.log('Response:', response.data);
             return response.data;
         } else {
             // Nếu không có searchData, thực hiện lấy dữ liệu phân trang
@@ -19,7 +18,6 @@ export const fetchUsers = createAsyncThunk('users/fetchUsers', async ({ searchDa
                     params: { page, size }
                 }
             );
-            console.log('List User Response:', response.data);
             return response.data;
         }
     } catch (error) {
@@ -44,6 +42,7 @@ export const addUserCode = createAsyncThunk('userCode/addCode', async ({ userId,
     }
 });
 
+
 let cancelToken;
 
 export const checkDuplicateCode = createAsyncThunk(
@@ -51,7 +50,7 @@ export const checkDuplicateCode = createAsyncThunk(
     async ({ userId, code }, { signal }) => {
         // Hủy yêu cầu trước đó nếu có
         if (cancelToken) {
-            cancelToken.cancel('Canceled due to new request');
+            cancelToken.cancel('Đã hủy do có yêu cầu mới');
         }
 
         // Tạo một Cancel Token mới
@@ -63,17 +62,15 @@ export const checkDuplicateCode = createAsyncThunk(
         try {
             const response = await axios.get(`${API_BASE_URL}/user/checkDuplicateCode/${userId}/${code}`, {
                 cancelToken: cancelToken.token,
+
             });
             return response.data;
         } catch (error) {
             if (axios.isCancel(error)) {
-                // Xử lý khi yêu cầu bị hủy
-                console.log('Request canceled:', error.message);
+                console.log('Request đã hủy:', error.message);
             } else {
-                // Xử lý lỗi khác
                 console.error('Check lỗi trùng:', error);
             }
-            // Nếu có lỗi, trả về false hoặc giá trị phù hợp với trường hợp của bạn
             return false;
         }
     }
@@ -128,9 +125,18 @@ const usersSlice = createSlice({
                 const id = action.payload;
                 state.list = state.list.filter((user) => user.userId !== id);
             })
+            .addCase(checkDuplicateCode.pending, (state) => {
+                state.status = 'loading';
+            })
             .addCase(checkDuplicateCode.fulfilled, (state, action) => {
                 state.isDuplicate = action.payload;
-            });
+                state.status = 'succeeded';
+            })
+            .addCase(checkDuplicateCode.rejected, (state, action) => {
+                state.status = 'failed';
+                state.error = action.error.message;
+            })
+
 
     },
 });
