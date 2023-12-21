@@ -6,7 +6,7 @@ const CustomInput = ({ index, onChange, value, checkDuplicate, onRequestCountCha
     const [internalValue, setInternalValue] = useState(value);
     const [error, setError] = useState(null);
     const [requestCount, setRequestCount] = useState(0);
-    const [cancelToken, setCancelToken] = useState(null);
+
 
     const changeHandler = async (e) => {
         setRequestCount((count) => count + 1);
@@ -15,32 +15,24 @@ const CustomInput = ({ index, onChange, value, checkDuplicate, onRequestCountCha
         setInternalValue((value) => ({ ...value, value: newValue, isValid: true, validating: true }));
         setError(null);
 
-        // Hủy yêu cầu trước đó nếu có
-        if (cancelToken) {
-            cancelToken.cancel("Yêu cầu trước đã bị hủy");
-        }
 
-        if (newValue.trim() !== '') {
-            // Tạo cancelToken mới
-            const source = axios.CancelToken.source();
-            setCancelToken(source);
-
+        if (newValue.trim() !== "") {
             try {
-                const isDuplicate = await checkDuplicate(newValue, source.token);
+
+                const isDuplicate = await checkDuplicate(newValue);
 
                 if (isDuplicate) {
-                    setError('Mã đã tồn tại!');
+                    setError("Mã đã tồn tại!");
                     setInternalValue((value) => ({ ...value, isValid: false, validating: false }));
                 } else {
                     setInternalValue((value) => ({ ...value, isValid: true, validating: false }));
                 }
             } catch (error) {
                 if (!axios.isCancel(error)) {
-                    console.error('Lỗi trùng:', error);
+                    console.error("Lỗi trùng:", error);
                 }
             } finally {
-                // Đặt cancelToken thành null sau khi yêu cầu hoàn thành
-                setCancelToken(null);
+
                 onRequestCountChange(-1);
                 setRequestCount((count) => count - 1);
             }
@@ -56,10 +48,10 @@ const CustomInput = ({ index, onChange, value, checkDuplicate, onRequestCountCha
     return (
         <div>
             <Form.Control type="text" value={internalValue.value} onChange={changeHandler} />
-            {requestCount > 0 && <p style={{ color: 'gray' }}>Đang kiểm tra mã...</p>}
-            {error && !internalValue.validating && <p style={{ color: 'red' }}>{error}</p>}
+            {requestCount > 0 && <p style={{ color: "gray" }}>Đang kiểm tra mã...</p>}
+            {error && !internalValue.validating && <p style={{ color: "red" }}>{error}</p>}
             {internalValue.isValid === false && !internalValue.validating && !error && (
-                <p style={{ color: 'red' }}>Vui lòng nhập mã!</p>
+                <p style={{ color: "red" }}>Vui lòng nhập mã!</p>
             )}
         </div>
     );

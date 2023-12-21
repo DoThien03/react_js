@@ -43,38 +43,45 @@ export const addUserCode = createAsyncThunk('userCode/addCode', async ({ userId,
 });
 
 
-let cancelToken;
 
+let cancelTokens = {};
 export const checkDuplicateCode = createAsyncThunk(
     'userCode/checkDuplicate',
-    async ({ userId, code }, { signal }) => {
-        // Hủy yêu cầu trước đó nếu có
-        if (cancelToken) {
-            cancelToken.cancel('Đã hủy do có yêu cầu mới');
+    async ({ userId, code, id }) => {
+        console.log('Bắt đầu xử lý với ID:', id);
+        let cancelTokenSource = cancelTokens[id];
+
+        if (cancelTokenSource) {
+            console.log('Hủy yêu cầu cũ:', cancelTokenSource);
+            cancelTokenSource.cancel('Đã hủy do có yêu cầu mới');
         }
 
-        // Tạo một Cancel Token mới
-        cancelToken = axios.CancelToken.source();
-
-        // Gán signal của Cancel Token vào biến để sử dụng trong việc hủy bỏ sau này
-        signal.addEventListener('abort', () => cancelToken.cancel());
+        cancelTokenSource = axios.CancelToken.source();
+        cancelTokens[id] = cancelTokenSource;
 
         try {
-            const response = await axios.get(`${API_BASE_URL}/user/checkDuplicateCode/${userId}/${code}`, {
-                cancelToken: cancelToken.token,
+            const response = await axios.get(
+                `${API_BASE_URL}/user/checkDuplicateCode/${userId}/${code}`,
+                { cancelToken: cancelTokenSource.token }
+            );
 
-            });
+            // Nếu yêu cầu thành công, hủy cancelTokenSource
+            console.log('Yêu cầu thành công với id:', id);
+            cancelTokenSource.cancel('Yêu cầu thành công');
+
             return response.data;
         } catch (error) {
             if (axios.isCancel(error)) {
-                console.log('Request đã hủy:', error.message);
+                console.log('Yêu cầu đã bị hủy với id:', id, error.message);
             } else {
-                console.error('Check lỗi trùng:', error);
+                console.log('Check lỗi trùng với id:', id, error);
             }
             return false;
         }
     }
 );
+
+
 
 export const updateUser = createAsyncThunk('users/updateUser', async (userData) => {
     const response = await axios.put(`${API_BASE_URL}/user/update`, userData);
